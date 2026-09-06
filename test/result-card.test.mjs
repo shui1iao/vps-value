@@ -83,7 +83,7 @@ async function appHarness() {
   const context = vm.createContext({
     ...core, localToday: () => '2026-01-16', createShareClient,
     createExchangeClient: () => ({ getState: () => state, refresh: async (options) => { retries.push(options); return state; } }),
-    createAdaptiveControls: (fields) => { fields.currency.value = 'CNY'; fields.billingCycle.value = 'custom'; fields.customDays.value = '30'; fields.endAt.value = '2026-01-31'; },
+    createCustomControls: (fields) => { fields.currency.value = 'CNY'; fields.billingCycle.value = 'custom'; fields.customDays.value = '30'; fields.endAt.value = '2026-01-31'; },
     document: { querySelector: (selector) => elements.get(selector.slice(1)), addEventListener() {} },
     window: { addEventListener() {} }, setTimeout() {}, clearTimeout() {},
   });

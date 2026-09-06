@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 
 const read = (file) => readFile(new URL(`../public/${file}`, import.meta.url), 'utf8');
 
-test('only date and billing inputs remain; initial desktop controls are accessible and adapt on touch', async () => {
+test('only date and billing inputs remain; all devices use accessible custom controls', async () => {
   const html = await read('index.html');
   assert.doesNotMatch(html, /datetime-local|start-at|valued-at|use-now|精确到时|小时/);
   for (const id of ['currency', 'billing-cycle']) {
@@ -12,7 +12,7 @@ test('only date and billing inputs remain; initial desktop controls are accessib
   }
   assert.match(html, /<input[^>]+id="end-at"[^>]+type="text"[^>]+placeholder="YYYY-MM-DD"/);
   assert.match(html, /<button[^>]+id="end-at-picker"[^>]+type="button"[^>]+aria-label="选择到期日"[^>]+aria-haspopup="dialog"/);
-  assert.match(html, /id="end-at-mode"[^>]+type="button"[^>]+aria-controls="end-at"/);
+  assert.doesNotMatch(html, /end-at-mode|<select\b|type="date"/);
   assert.match(html, /id="custom-days"[^>]+min="1"[^>]+max="36500"[^>]+step="1"/);
   assert.match(html, /到期当天按 0 天计算/);
   assert.match(html, /账单周期天数/);
@@ -104,7 +104,7 @@ test('desktop outer panels are equal grid tracks and stretch, mobile remains nat
   assert.match(css, /@media\s*\(max-width:\s*800px\)[\s\S]*?\.workspace\s*\{[^}]*grid-template-columns:\s*1fr[^}]*align-items:\s*start/);
 });
 
-test('desktop currency options expose full Chinese descriptions without clipping', async () => {
+test('custom currency options expose full Chinese descriptions without clipping on every device', async () => {
   const [adapter, controls, css] = await Promise.all([read('control-adapter.mjs'), read('controls.mjs'), read('styles.css')]);
   assert.match(adapter, /description:\s*CURRENCY_NAMES\[value\]/);
   assert.match(controls, /textContent\s*=\s*option\.description/);

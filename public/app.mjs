@@ -1,5 +1,5 @@
 import { calculateResidualValue, convertResultToCny, formatDuration, formatMoney, normalizeCurrency, localToday, parseDateOnly } from './core.mjs';
-import { createAdaptiveControls } from './control-adapter.mjs';
+import { createCustomControls } from './control-adapter.mjs';
 import { createShareClient } from './share-client.mjs';
 import { createExchangeClient } from './fx-client.mjs';
 
@@ -220,7 +220,7 @@ async function downloadPng() {
 }
 
 function onInputChange() { inputRevision++; updateResult(); }
-createAdaptiveControls(fields, { onChange: onInputChange });
+createCustomControls(fields, { onChange: onInputChange });
 form.addEventListener('submit', (event) => event.preventDefault());
 form.addEventListener('input', onInputChange);
 form.addEventListener('change', onInputChange);

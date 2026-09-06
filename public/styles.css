@@ -36,7 +36,7 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-button, input, select { font: inherit; }
+button, input { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 button { color: inherit; }
 [hidden] { display: none !important; }
@@ -184,7 +184,7 @@ h2 { margin: 0; font-size: 17px; line-height: 1.2; letter-spacing: -.02em; }
 
 .field { min-width: 0; }
 .field.full, .amount-field { grid-column: 1 / -1; }
-.field > label, .field-label label {
+.field > label {
   display: block;
   margin: 0 0 7px;
   color: var(--muted);
@@ -206,45 +206,27 @@ input, .control-trigger {
 }
 
 input { padding: 0 13px; }
-.field-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
-.field-label label { margin-bottom: 0; }
+
 .date-control { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .date-control .date-input { flex: 1 1 0; cursor: text; }
 .date-control .date-picker-button { flex: 0 0 44px; width: 44px; justify-content: center; }
-.date-mode { min-height: 44px; padding: 0 6px; border: 0; border-radius: 8px; background: transparent; color: var(--blue); font-size: 11px; cursor: pointer; }
-.date-mode:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
 input[aria-invalid="true"] { border-color: var(--red); }
 input::placeholder { color: color-mix(in srgb, var(--muted) 64%, transparent); }
 input:hover, .control-trigger:hover { border-color: color-mix(in srgb, var(--blue) 38%, var(--border-soft)); }
 input:focus, .control-trigger:focus-visible, .control-trigger[aria-expanded="true"] { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-soft); background: var(--page-surface); }
 
-/* Mouse expansions follow Zeno; touch uses real native select/date fields. */
+/* All devices use the same Zeno-style custom expansions. */
 .control-trigger { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 12px; text-align: left; cursor: pointer; font-size: 14px; font-variant-numeric: tabular-nums; }
 .control-trigger > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .control-trigger svg, .option-check { width: 18px; height: 18px; flex: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .control-trigger svg { color: var(--muted); }
 .control-trigger[aria-expanded="true"] svg { color: var(--blue); }
 .control-trigger[aria-haspopup="listbox"][aria-expanded="true"] svg { transform: rotate(180deg); }
-.native-control {
-  display: block;
-  min-width: 0;
-  max-width: 100%;
-  min-height: 44px;
-  font-size: 16px;
-  -webkit-appearance: none;
-  appearance: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* Keep touch text at 16px to avoid iOS focus zoom, without changing controls. */
+@media (pointer: coarse) and (hover: none) {
+  #calculator input, #calculator .control-trigger { font-size: 16px; }
 }
-/* The select itself is the full hit target; no hidden proxy or picker calls. */
-select.native-control { padding-right: 26px; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 15px) 19px, calc(100% - 11px) 19px; background-size: 4px 4px; background-repeat: no-repeat; }
-/* Flex avoids Safari temporal inputs' extra bottom gap under display: block. */
-.native-control[type="date"] { display: flex; align-items: center; justify-content: flex-start; width: 100%; position: relative; text-align: left; }
-.native-control::-webkit-date-and-time-value { display: block; align-self: center; min-height: 0; line-height: normal; text-align: left; }
-.native-control::-webkit-datetime-edit { min-width: 0; padding: 0; text-align: left; }
-/* Keep the real picker clickable and out of the date text flow. */
-.native-control::-webkit-calendar-picker-indicator { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); margin: 0; }
-html[data-control-mode="native"] #calculator input { font-size: 16px; }
 .field-help { margin: 6px 1px 0; color: var(--muted); font-size: 10px; line-height: 1.6; }
 .control-popover {
   position: fixed;
