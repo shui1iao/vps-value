@@ -2,7 +2,7 @@
 
 按自然日折算 VPS 剩余价值，支持人民币换算及高清分享图片。
 
-- [在线使用](https://calc.shuijiao.de)
+- [在线使用](https://calc.siaoz.si)
 - [版本发布](https://github.com/shui1iao/vps-value/releases)
 
 ## 快速开始
