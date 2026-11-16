@@ -1,0 +1,23 @@
+services:
+  app:
+    image: ${VPS_VALUE_IMAGE:-vps-value:local}
+    build:
+      context: .
+      target: runtime
+    user: "${RUN_UID:-1000}:${RUN_GID:-1000}"
+    environment:
+      HOST: 0.0.0.0
+      PORT: "4173"
+      STATIC_DIR: /app/dist
+      STORAGE_DIR: /app/storage/shares
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:4173}
+    ports:
+      - "127.0.0.1:${HTTP_PORT:-4173}:4173"
+    volumes:
+      - type: volume
+        source: shares
+        target: /app/storage/shares
+    restart: unless-stopped
+
+volumes:
+  shares:

@@ -12,14 +12,21 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
+    env:
+      COMPOSE_PROJECT_NAME: vps-value-ci
+      VPS_VALUE_IMAGE: vps-value:ci
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version: '24'
-          cache: npm
-      - run: npm ci
-      - run: npm test
-      - run: npm run build
-      - run: npm audit --omit=dev
+      - name: Existing tests, build and dependency audit (Docker only)
+        run: docker build --target verify --tag vps-value:verify .
+      - name: Validate Compose
+        run: docker compose config --quiet
+      - name: Build and check container health
+        run: docker compose up -d --build --wait --wait-timeout 90
+      - name: Container logs
+        if: failure()
+        run: docker compose logs --no-color
+      - name: Remove CI containers and temporary data
+        if: always()
+        run: docker compose down --volumes

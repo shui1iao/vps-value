@@ -5,42 +5,64 @@
 - [在线使用](https://calc.siaoz.si)
 - [版本发布](https://github.com/shui1iao/vps-value/releases)
 
-## 快速开始
+## Docker 部署（正式运行方式）
 
-需要 Node.js **20.9.0 或更高版本**（建议 Node.js 24）、npm，以及系统中可用的中文字体。
+宿主只需 Docker Engine 与 Docker Compose v2，无需 Node.js、npm、字体、`node_modules` 或 `dist`。镜像内用 lockfile 执行 `npm ci` 和 `npm run build`，内置 Noto 中文字体，服务以非 root 用户运行。
 
 ```bash
 git clone https://github.com/shui1iao/vps-value.git
 cd vps-value
-npm ci
-npm test
-npm run build
-npm start
+docker compose up -d --build
 ```
 
-打开 `http://127.0.0.1:4173`，健康检查地址为 `/health`。Linux 如果导出图片缺少中文，可安装系统字体，例如 Debian / Ubuntu 的 `fonts-noto-cjk`。
+打开 `http://localhost:4173`，健康检查为 `/health`；可用 `docker compose ps` 查看健康状态。默认仅发布到宿主 `127.0.0.1:4173`，容器内部监听 `0.0.0.0:4173`。生产环境通过 Caddy / Nginx 提供 HTTPS，反代到宿主回环端口；不要直接暴露公网后依赖未经校验的转发头生成链接。
 
-## 自部署
+### 配置
 
-程序默认仅监听 `127.0.0.1:4173`。生产环境建议使用非 root 用户运行，并通过 Caddy / Nginx 提供 HTTPS；不要直接暴露到公网后依赖未校验的转发头生成链接。
+可复制 `.env.example` 为 `.env` 后修改，也可用 `docker compose --env-file /path/to/deploy.env ...` 指定独立配置。不要直接复用旧 Node 服务的 `.env`：Compose 只将以下变量用于部署，并显式固定容器内的监听地址、端口、静态目录与存储目录，不会把宿主 `.env` 整体注入容器。
 
-可复制 `.env.example` 为 `.env`，设置 `PUBLIC_BASE_URL` 为你的 HTTPS 地址，再运行：
+| Compose 变量 | 默认值 / 用途 |
+| --- | --- |
+| `PUBLIC_BASE_URL` | `http://localhost:4173`；生产必须设为自己的 HTTPS 地址，如 `https://example.com` |
+| `HTTP_PORT` | 宿主回环端口 `4173`；容器端口固定 `4173` |
+| `VPS_VALUE_IMAGE` | 本地镜像名 `vps-value:local`；不自动推送镜像仓库 |
+| `RUN_UID` / `RUN_GID` | `1000` / `1000`；既有 bind 数据时可覆盖为其原有数字 UID/GID，不能设为 root |
+| `SHARES_DIR` | 仅 bind 配置使用：已经存在的宿主分享目录的绝对路径 |
+
+### 数据与权限
+
+默认使用 Compose 项目专属的 `shares` named volume。首次创建空卷时，Docker 从镜像初始化目录，所有者为 `1000:1000`、权限 `750`，无需宿主 Node 或手工创建目录。此模式请保持默认运行 UID/GID；自定义身份请使用下述已有目录 bind 方式。
+
+分享图片与 `.fx-cache.json` 均在同一存储目录。升级必须保留完整目录和同一个 Compose 项目名（由目录名或 `-p` 决定），否则历史图片直链会失效。**不要执行 `docker compose down -v` / `--volumes`，也不要删除数据卷。** 普通 `docker compose down` 会保留卷。
+
+已有数据可直接挂载，不复制、不递归 chown、不修改现有权限：
 
 ```bash
-node --env-file=.env server.mjs
+# 在独立部署配置中设置，以下仅为示例：
+# PUBLIC_BASE_URL=https://example.com
+# SHARES_DIR=/srv/vps-value/storage/shares
+# RUN_UID=1000
+# RUN_GID=1000
+
+docker compose --env-file /path/to/deploy.env \
+  -f compose.yaml -f compose.bind.yaml config --quiet
+docker compose --env-file /path/to/deploy.env \
+  -f compose.yaml -f compose.bind.yaml up -d --build
 ```
 
-`npm start` 不自动读取 `.env`。支持的环境变量：
+`RUN_UID` / `RUN_GID` 应与原数据的数字所有者/组一致，并确保原目录可写、父目录可遍历。bind 配置禁止 Docker 自动创建缺失的宿主目录，避免生成 root 所有的空目录后非 root 服务写入失败；路径错误会直接报错。新建 bind 目录应由管理员预先创建并赋予所选身份写权限，不能直接指向一个尚不存在的路径。
 
-- `HOST` / `PORT`：监听地址和端口。
-- `PUBLIC_BASE_URL`：生成分享链接使用的公开站点地址，生产环境应显式设置。
-- `STATIC_DIR`：前端构建目录，默认 `dist`。
-- `STORAGE_DIR`：分享图片与汇率缓存目录，默认 `storage/shares`，相对路径基于项目根目录。
+先备份原目录（包括点文件）与配置；切换写入前停止旧写入进程。升级或回滚都沿用相同的卷/目录和配置，不能让两个版本同时写数据。用过 bind 配置后，后续 `up` / `down` / `logs` 等命令都保持相同的项目名、`--env-file` 和两个 `-f` 参数，避免意外切回空 named volume。
 
-运行用户需要对存储目录具有写权限。升级时保留存储目录，否则历史图片直链会失效。`.env`、运行数据、依赖及构建产物均不提交到仓库。项目没有 npm 包发布步骤。
+### 升级与镜像离线交付
+
+取得新源码后重跑相同的 `docker compose ... up -d --build`。保留前一版源码/镜像和数据备份以便回滚。
+
+也可在同架构机器构建并 `docker save`，目标机 `docker load` 后将 `VPS_VALUE_IMAGE` 指向该镜像，再执行 `docker compose ... up -d --no-build --pull never`。此路径同样不需要宿主 Node，也不需要镜像仓库发布。
+
+`.env`、运行数据、依赖及构建产物均不提交到仓库。项目没有 npm 包发布步骤。
 
 分享图片直链公开可访问，不要把密码或其他敏感信息填入名称。日常计算在浏览器内进行；生成图片时会向本站服务端提交当前参数。参考汇率并非交易结算报价。
-
 
 ## 按日计费
 
@@ -147,7 +169,10 @@ SVG 保持 1200×630 逻辑画布；Sharp 在读取矢量输入时使用 `densit
 
 ## 开发与验证
 
+以下原生 Node 命令仅供开发，**生产部署不需要**。需要 Node.js **20.9.0 或更高版本**（建议 Node.js 24）、npm 和中文字体（Debian / Ubuntu 可用 `fonts-noto-cjk`）。
+
 ```bash
+npm ci
 npm test
 npm run build
 npm audit --omit=dev
@@ -157,3 +182,7 @@ PORT=4174 PUBLIC_BASE_URL=http://127.0.0.1:4174 npm start
 依赖按 lockfile 安装。构建产物位于 `dist/`，公开图片保存于 `storage/shares/`。构建把 HTML、全部客户端模块与 CSS 的内容摘要作为 `/assets/<版本>/` 路径，模块只做同版本的相对导入，避免新旧核心混载。构建先生成临时目录，成功后替换本树的 `dist`；拒绝替换 `dist` 符号链接。构建不是部署。
 
 健康检查为 `/health`。服务保留请求大小 / 生成频率限制、安全响应头和只读图片路由。反向代理后的客户端共用服务端生成频率限制；个人用途建议保持现有限制。
+
+CI 在 Docker 的 `verify` 构建阶段保留现有 `npm test`、构建和依赖审计，再通过 Compose 构建正式镜像并等待健康检查；不发布镜像或 Release。需要本地复现这组 CI 检查时可运行 `docker build --target verify .`；普通部署不会运行全套测试。
+
+开发时直接 `npm start` 不会读取 `.env`。原生服务支持 `HOST` / `PORT`（默认 `127.0.0.1:4173`）、`PUBLIC_BASE_URL`、`STATIC_DIR`（默认 `dist`）及 `STORAGE_DIR`（默认 `storage/shares`，相对项目根目录）；运行用户必须具有存储写权限。Compose 的 `.env.example` 是部署变量示例，不是原生 Node 服务配置。

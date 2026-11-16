@@ -1,0 +1,9 @@
+# Optional override: never create or chown an existing host data directory.
+services:
+  app:
+    volumes:
+      - type: bind
+        source: ${SHARES_DIR:?Set SHARES_DIR to an existing absolute shares directory}
+        target: /app/storage/shares
+        bind:
+          create_host_path: false
