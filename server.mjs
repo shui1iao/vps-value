@@ -1,4 +1,5 @@
 import http from 'node:http';
+import net from 'node:net';
 import path from 'node:path';
 import { createReadStream } from 'node:fs';
 import { access, stat } from 'node:fs/promises';
@@ -40,19 +41,23 @@ function sendJson(response, statusCode, body, extraHeaders = {}) {
 async function readJson(request, limit = 16_384) {
   const chunks = [];
   let size = 0;
-  let oversized = false;
-  for await (const chunk of request) {
-    size += chunk.length;
-    if (size > limit) {
-      oversized = true;
-    } else {
-      chunks.push(chunk);
-    }
-  }
-  if (oversized) {
+  const contentLength = Number(request.headers['content-length']);
+  if (Number.isFinite(contentLength) && contentLength > limit) {
+    request.resume();
     const error = new Error('请求内容过大');
     error.statusCode = 413;
     throw error;
+  }
+  for await (const chunk of request) {
+    size += chunk.length;
+    if (size > limit) {
+      request.pause();
+      request.destroy();
+      const error = new Error('请求内容过大');
+      error.statusCode = 413;
+      throw error;
+    }
+    chunks.push(chunk);
   }
   try {
     return JSON.parse(Buffer.concat(chunks).toString('utf8'));
@@ -71,8 +76,26 @@ function requestBaseUrl(request, configuredBaseUrl) {
   return `${protocol}://${host}`;
 }
 
+function isTrustedProxyAddress(addr) {
+  const clean = String(addr || '').replace(/^::ffff:/, '');
+  if (clean === '127.0.0.1' || clean === '::1') return true;
+  if (/^10\./.test(clean) || /^192\.168\./.test(clean)) return true;
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(clean)) return true;
+  return false;
+}
+
 function clientAddress(request) {
-  return request.socket.remoteAddress || 'unknown';
+  const peer = request.socket.remoteAddress || 'unknown';
+  if (isTrustedProxyAddress(peer)) {
+    const xff = String(request.headers['x-forwarded-for'] || '');
+    const parts = xff.split(',').map((s) => s.trim()).filter(Boolean);
+    for (let i = parts.length - 1; i >= 0; i -= 1) {
+      if (net.isIP(parts[i])) return parts[i];
+    }
+    const realIp = String(request.headers['x-real-ip'] || '').trim();
+    if (net.isIP(realIp)) return realIp;
+  }
+  return peer;
 }
 
 function createRateLimiter({ windowMs = 60_000, max = 12 } = {}) {
