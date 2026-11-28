@@ -1,9 +1,38 @@
 # VPS Value
 
-按自然日折算 VPS 剩余价值，支持人民币换算及高清分享图片。
+[![Release](https://img.shields.io/github/v/release/shui1iao/vps-value?style=flat-square&color=2563eb)](https://github.com/shui1iao/vps-value/releases/latest)
+[![Docker](https://img.shields.io/badge/Deploy-Docker%20Compose-2496ED?style=flat-square&logo=docker&logoColor=white)](docker-compose.yml)
+[![Live Demo](https://img.shields.io/badge/Online-calc.siaoz.si-16a34a?style=flat-square)](https://calc.siaoz.si)
 
-- [在线使用](https://calc.siaoz.si)
-- [版本发布](https://github.com/shui1iao/vps-value/releases)
+**按自然日精确折算 VPS 剩余价值的轻量级 Web 计算器**——支持 16 种币种自动换算人民币，一键生成高清 PNG 分享卡片、图片直链与 Markdown 代码。
+
+[在线使用](https://calc.siaoz.si) · [Docker 部署](#docker-部署正式运行方式) · [版本发布](https://github.com/shui1iao/vps-value/releases)
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/shui1iao/vps-value/f04ae1e522d59effce8ceea1fb5df0201aabb2b7/v0.1.2/calc-dark.png" />
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/shui1iao/vps-value/f04ae1e522d59effce8ceea1fb5df0201aabb2b7/v0.1.2/calc-light.png" />
+    <img alt="VPS Value 界面预览" src="https://raw.githubusercontent.com/shui1iao/vps-value/f04ae1e522d59effce8ceea1fb5df0201aabb2b7/v0.1.2/calc-light.png" width="100%" />
+  </picture>
+</p>
+
+<details>
+<summary>查看浅色 / 深色双主题对比</summary>
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <a href="https://raw.githubusercontent.com/shui1iao/vps-value/f04ae1e522d59effce8ceea1fb5df0201aabb2b7/v0.1.2/calc-light.png"><img src="https://raw.githubusercontent.com/shui1iao/vps-value/f04ae1e522d59effce8ceea1fb5df0201aabb2b7/v0.1.2/calc-light.png" alt="浅色主题" width="100%" /></a>
+      <sub><b>浅色主题</b></sub>
+    </td>
+    <td width="50%" align="center">
+      <a href="https://raw.githubusercontent.com/shui1iao/vps-value/f04ae1e522d59effce8ceea1fb5df0201aabb2b7/v0.1.2/calc-dark.png"><img src="https://raw.githubusercontent.com/shui1iao/vps-value/f04ae1e522d59effce8ceea1fb5df0201aabb2b7/v0.1.2/calc-dark.png" alt="深色主题" width="100%" /></a>
+      <sub><b>深色主题</b></sub>
+    </td>
+  </tr>
+</table>
+
+</details>
 
 ## Docker 部署（正式运行方式）
 
